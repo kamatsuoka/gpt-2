@@ -1,22 +1,26 @@
 #!/usr/bin/env python3
 
-import fire
 import json
 import os
+
+import fire
 import numpy as np
 import tensorflow as tf
 
-import model, sample, encoder
+import encoder
+import model
+import sample
+
 
 def interact_model(
-    model_name='345M',
-    seed=None,
-    nsamples=1,
-    batch_size=1,
-    length=None,
-    temperature=1,
-    top_k=0,
-    models_dir='models',    
+        model_name='345M',
+        seed=None,
+        nsamples=1,
+        batch_size=1,
+        length=None,
+        temperature=1,
+        top_k=0,
+        models_dir='models',
 ):
     """
     Interactively run the model
@@ -86,6 +90,6 @@ def interact_model(
                     print(text)
             print("=" * 80)
 
+
 if __name__ == '__main__':
     fire.Fire(interact_model)
-
