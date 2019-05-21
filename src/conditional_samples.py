@@ -11,8 +11,6 @@ import encoder
 import model
 import sample
 
-text_array = []
-
 
 def run_model(
         starting_text: str,
@@ -44,7 +42,7 @@ def run_model(
      while 40 means 40 words are considered at each step. 0 (default) is a
      special setting meaning no restrictions. 40 generally is a good value.
      :models_dir : path to parent folder containing model subfolders
-     (i.e. contains the <model_name> folder)     
+     (i.e. contains the <model_name> folder)
     """
     if starting_text.strip() == '':
         raise ValueError('starting text must not be empty')
@@ -64,7 +62,6 @@ def run_model(
     elif length > hparams.n_ctx:
         raise ValueError("Can't get samples longer than window size: %s" % hparams.n_ctx)
 
-    global text_array
     with tf.Session(graph=tf.Graph()) as sess:
         context = tf.placeholder(tf.int32, [batch_size, None])
         np.random.seed(seed)
@@ -88,7 +85,10 @@ def run_model(
             })[:, len(context_tokens):]
             for i in range(batch_size):
                 generated += 1
-                text_array.append(enc.decode(out[i]))
+                text = enc.decode(out[i])
+                print("=" * 40 + " SAMPLE " + str(generated) + " " + "=" * 40)
+                print(text)
+        print("=" * 80)
 
 
 if __name__ == '__main__':
