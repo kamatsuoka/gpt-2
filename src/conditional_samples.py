@@ -11,6 +11,8 @@ import encoder
 import model
 import sample
 
+global text_array
+
 
 def run_model(
         starting_text: str,
@@ -62,7 +64,7 @@ def run_model(
     elif length > hparams.n_ctx:
         raise ValueError("Can't get samples longer than window size: %s" % hparams.n_ctx)
 
-    text = ''
+    global text_array
     with tf.Session(graph=tf.Graph()) as sess:
         context = tf.placeholder(tf.int32, [batch_size, None])
         np.random.seed(seed)
@@ -86,11 +88,7 @@ def run_model(
             })[:, len(context_tokens):]
             for i in range(batch_size):
                 generated += 1
-                text += ("=" * 40 + " sample " + str(generated) + " " + "=" * 40) + "\n\n"
-                text += enc.decode(out[i])
-        text += "\n\n" + ("=" * 80) + "\n\n"
-
-    return text
+                text_array.append(enc.decode(out[i]))
 
 
 if __name__ == '__main__':
