@@ -11,7 +11,7 @@ import encoder
 import model
 import sample
 
-global text_array
+text_array = []
 
 
 def run_model(
