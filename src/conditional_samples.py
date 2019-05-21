@@ -62,6 +62,7 @@ def run_model(
     elif length > hparams.n_ctx:
         raise ValueError("Can't get samples longer than window size: %s" % hparams.n_ctx)
 
+    text = ''
     with tf.Session(graph=tf.Graph()) as sess:
         context = tf.placeholder(tf.int32, [batch_size, None])
         np.random.seed(seed)
@@ -85,10 +86,11 @@ def run_model(
             })[:, len(context_tokens):]
             for i in range(batch_size):
                 generated += 1
-                text = enc.decode(out[i])
-                print("=" * 40 + " SAMPLE " + str(generated) + " " + "=" * 40)
-                print(text)
-        print("=" * 80)
+                text += ("=" * 40 + " sample " + str(generated) + " " + "=" * 40) + "\n\n"
+                text += enc.decode(out[i])
+        text += "\n\n" + ("=" * 80) + "\n\n"
+
+    return text
 
 
 if __name__ == '__main__':
