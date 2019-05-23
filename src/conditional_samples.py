@@ -11,15 +11,12 @@ import encoder
 import model
 import sample
 
-text_array = []
-
 
 def run_model(
         starting_text: str,
         model_name='345M',
         seed=None,
         nsamples=1,
-        batch_size=1,
         length=None,
         temperature=1,
         top_k=0,
@@ -32,7 +29,6 @@ def run_model(
     :seed=None : Integer seed for random number generators, fix seed to reproduce
      results
     :nsamples=1 : Number of samples to return total
-    :batch_size=1 : Number of batches (only affects speed/memory).  Must divide nsamples.
     :length=None : Number of tokens in generated text, if None (default), is
      determined by model hyperparameters
     :temperature=1 : Float value controlling randomness in boltzmann
@@ -50,9 +46,6 @@ def run_model(
         raise ValueError('starting text must not be empty')
 
     models_dir = os.path.expanduser(os.path.expandvars(models_dir))
-    if batch_size is None:
-        batch_size = 1
-    assert nsamples % batch_size == 0
 
     enc = encoder.get_encoder(model_name, models_dir)
     hparams = model.default_hparams()
@@ -64,7 +57,8 @@ def run_model(
     elif length > hparams.n_ctx:
         raise ValueError("Can't get samples longer than window size: %s" % hparams.n_ctx)
 
-    global text_array
+    batch_size = 1
+    text_array = []
     with tf.Session(graph=tf.Graph()) as sess:
         context = tf.placeholder(tf.int32, [batch_size, None])
         np.random.seed(seed)
@@ -88,7 +82,9 @@ def run_model(
             })[:, len(context_tokens):]
             for i in range(batch_size):
                 generated += 1
-                text_array.append(enc.decode(out[i]))
+                sample_output = enc.decode(out[i])
+                text_array.append(sample_output)
+    return text_array
 
 
 if __name__ == '__main__':
