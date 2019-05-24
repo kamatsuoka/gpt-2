@@ -63,10 +63,11 @@ class Placeholders:
 
 def generate_samples(
         sess: tf.Session,
-        hparams,
+        hparams: HParams,
         sequence_output,
         enc: Encoder,
-        placeholders,
+        placeholders: Placeholders,
+        print_fn,
         nsamples: 1,
         starting_text: str,
         length=None,
@@ -74,17 +75,17 @@ def generate_samples(
         top_k=0):
 
     if starting_text.strip() == '':
-        raise ValueError('starting text must not be empty')
+        print('starting text must not be empty')
+        return
     if length is None:
         length = hparams.n_ctx // 2
     elif length > hparams.n_ctx:
-        raise ValueError("Can't get samples longer than window size: %s" % hparams.n_ctx)
+        print("Can't get samples longer than window size: %s" % hparams.n_ctx)
+        return
 
     context_tokens = enc.encode(starting_text)
     feed_dict = placeholders.feed_dict(context_tokens, length, temperature, top_k)
-    sample_output = []
     for _ in range(nsamples):
         out = sess.run(sequence_output, feed_dict)[:, len(context_tokens):]
-        sample_output.append(enc.decode(out[0]))
-    return sample_output
+        print_fn(enc.decode(out[0]))
 
