@@ -14,68 +14,6 @@ import sample
 from encoder import Encoder
 
 
-def run_model(
-        starting_text: str,
-        model_name='345M',
-        seed=None,
-        nsamples=1,
-        length=None,
-        temperature=1,
-        top_k=0,
-        models_dir='models',
-):
-    if starting_text.strip() == '':
-        raise ValueError('starting text must not be empty')
-
-    models_dir = os.path.expanduser(os.path.expandvars(models_dir))
-
-    enc = encoder.get_encoder(model_name, models_dir)
-    hparams = model.default_hparams()
-    with open(os.path.join(models_dir, model_name, 'hparams.json')) as f:
-        hparams.override_from_dict(json.load(f))
-
-    if length is None:
-        length = hparams.n_ctx // 2
-    elif length > hparams.n_ctx:
-        raise ValueError("Can't get samples longer than window size: %s" % hparams.n_ctx)
-
-    text_array = []
-    context = tf.placeholder(tf.int32, [1, None])
-    np.random.seed(seed)
-    tf.set_random_seed(seed)
-    length_holder = tf.placeholder(tf.float32, ())
-    temp_holder = tf.placeholder(tf.float32, ())
-    top_k_holder = tf.placeholder(tf.int32, ())
-
-    output = sample.sample_sequence(
-        hparams=hparams,
-        length=length_holder,
-        temperature=temp_holder,
-        top_k=top_k_holder,
-        context=context,
-        batch_size=1
-    )
-
-    sess = tf.Session()
-    saver = tf.train.Saver()
-    ckpt = tf.train.latest_checkpoint(os.path.join(models_dir, model_name))
-    saver.restore(sess, ckpt)
-
-    context_tokens = enc.encode(starting_text)
-    generated = 0
-    for _ in range(nsamples):
-        out = sess.run(output, feed_dict={
-            context: [context_tokens],
-            length_holder: length,
-            temp_holder: temperature,
-            top_k_holder: top_k,
-        })[:, len(context_tokens):]
-        generated += 1
-        sample_output = enc.decode(out[0])
-        text_array.append(sample_output)
-    return text_array
-
-
 def restore_model(
         model_name='345M',
         seed=None,
@@ -124,12 +62,13 @@ class Placeholders:
         }
 
 
-def generate_sample(
+def generate_samples(
         sess: tf.Session,
         hparams,
         sequence_output,
         enc: Encoder,
         placeholders,
+        nsamples: 1,
         starting_text: str,
         length=None,
         temperature=1,
@@ -144,10 +83,9 @@ def generate_sample(
 
     context_tokens = enc.encode(starting_text)
     feed_dict = placeholders.feed_dict(context_tokens, length, temperature, top_k)
-    out = sess.run(sequence_output, feed_dict)[:, len(context_tokens):]
-    sample_output = enc.decode(out[0])
+    sample_output = []
+    for _ in range(nsamples):
+        out = sess.run(sequence_output, feed_dict)[:, len(context_tokens):]
+        sample_output.append(enc.decode(out[0]))
     return sample_output
 
-
-if __name__ == '__main__':
-    fire.Fire(run_model)
